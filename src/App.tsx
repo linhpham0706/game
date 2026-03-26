@@ -4,10 +4,10 @@ import { RefreshCw, Trophy, Timer, Users, Play, Settings2, User, X, Volume2, Vol
 
 // Game constants
 const ALL_ICONS = [
-  "🍎", "🐶", "🚗", "🎈", "🍕", "🚀", "🎸", "🌈", 
-  "🍦", "🍔", "🚲", "🎮", "⚽", "🐱", "🦁", "🐼",
-  "🍓", "🍩", "🛸", "🎨", "🎭", "🎪", "🎬", "🎤",
-  "🎧", "🎹", "🎷", "🎺", "🎻", "🥁", "🏰", "🌋"
+  "A", "B", "C", "D", "E", "F", "G", "H", 
+  "I", "J", "K", "L", "M", "N", "O", "P",
+  "Q", "R", "S", "T", "U", "V", "W", "X",
+  "Y", "Z", "1", "2", "3", "4", "5", "6"
 ];
 
 const PLAYER_COLORS = [
@@ -645,13 +645,13 @@ export default function App() {
                   onClick={() => setGameStatus('menu')}
                   className="flex-1 py-3.5 bg-slate-800 text-slate-400 rounded-xl font-black uppercase tracking-widest text-[9px] hover:bg-rose-500 hover:text-white transition-all"
                 >
-                  Thoát Game
+                  Exit Game
                 </button>
                 <button
                   onClick={initGame}
                   className="flex-1 py-3.5 bg-white text-slate-900 rounded-xl font-black uppercase tracking-widest text-[9px] shadow-xl hover:bg-indigo-500 hover:text-white transition-all"
                 >
-                  Chơi Tiếp
+                  Continue Playing
                 </button>
               </div>
             </motion.div>
