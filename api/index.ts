@@ -1,5 +1,4 @@
 import express from "express";
-import { createServer as createViteServer } from "vite";
 import path from "path";
 import { createClient } from "@supabase/supabase-js";
 
@@ -29,14 +28,17 @@ try {
 
 app.use(express.json());
 
+// Health check endpoint
 app.get("/api/health", (req, res) => {
   res.json({ 
     status: "ok", 
     supabaseConfigured: !!supabase,
-    env: process.env.NODE_ENV
+    env: process.env.NODE_ENV,
+    isVercel: !!process.env.VERCEL
   });
 });
 
+// GET Leaderboard
 app.get("/api/leaderboard", async (req, res) => {
   try {
     if (!supabase) {
@@ -49,7 +51,13 @@ app.get("/api/leaderboard", async (req, res) => {
       .order("time", { ascending: true })
       .limit(10);
 
-    if (error) throw error;
+    if (error) {
+      console.error(">>> Supabase error fetching leaderboard:", error);
+      if (error.code === 'PGRST116' || error.message?.includes('relation "leaderboard" does not exist')) {
+        return res.json([]);
+      }
+      throw error;
+    }
     res.json(data || []);
   } catch (error: any) {
     console.error(">>> Leaderboard fetch error:", error);
@@ -57,6 +65,7 @@ app.get("/api/leaderboard", async (req, res) => {
   }
 });
 
+// POST Leaderboard
 app.post("/api/leaderboard", async (req, res) => {
   const { name, time, difficulty, date } = req.body;
   if (!name || !time) return res.status(400).json({ error: "Missing data" });
@@ -77,27 +86,49 @@ app.post("/api/leaderboard", async (req, res) => {
   }
 });
 
-async function startServer() {
-  try {
-    console.log(">>> Opening port 3000...");
+// Development vs Production handling
+if (process.env.NODE_ENV !== "production" && !process.env.VERCEL) {
+  const { createServer: createViteServer } = await import("vite");
+  async function startDevServer() {
+    try {
+      console.log(">>> Starting Vite in development mode...");
+      const vite = await createViteServer({
+        server: { middlewareMode: true },
+        appType: "spa",
+      });
+      
+      app.use(vite.middlewares);
+      
+      app.listen(PORT, "0.0.0.0", () => {
+        console.log(`>>> Dev server listening on http://localhost:${PORT}`);
+      });
+    } catch (err) {
+      console.error(">>> CRITICAL DEV SERVER ERROR:", err);
+    }
+  }
+  startDevServer();
+} else {
+  // In production (Vercel), serve static files from 'dist'
+  const distPath = path.join(process.cwd(), "dist");
+  app.use(express.static(distPath));
+  
+  // For any other route, serve index.html (SPA fallback)
+  app.get("*", (req, res, next) => {
+    if (req.path.startsWith("/api")) return next();
+    // In Vercel, static files are handled by rewrites, but this is a fallback
+    try {
+      res.sendFile(path.join(distPath, "index.html"));
+    } catch (e) {
+      next();
+    }
+  });
+  
+  if (!process.env.VERCEL) {
     app.listen(PORT, "0.0.0.0", () => {
-      console.log(`>>> Server listening on port ${PORT}`);
+      console.log(`>>> Production server listening on port ${PORT}`);
     });
-
-    console.log(">>> Starting Vite initialization...");
-    const vite = await createViteServer({
-      server: { middlewareMode: true },
-      appType: "spa",
-    });
-    
-    app.use(vite.middlewares);
-    console.log(">>> Vite middleware attached. App ready.");
-    
-  } catch (err) {
-    console.error(">>> CRITICAL SERVER ERROR:", err);
   }
 }
 
-startServer().catch(err => {
-  console.error(">>> UNHANDLED PROMISE REJECTION:", err);
-});
+// Export the app for Vercel
+export default app;
