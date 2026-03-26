@@ -1,3 +1,5 @@
+"use client";
+
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { RefreshCw, Trophy, Timer, Users, Play, Settings2, User, X, Volume2, VolumeX, Music } from 'lucide-react';
@@ -77,7 +79,7 @@ export default function App() {
 
   const saveScore = async (name: string, time: number) => {
     try {
-      await fetch('/api/leaderboard', {
+      const res = await fetch('/api/leaderboard', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -87,7 +89,9 @@ export default function App() {
           date: new Date().toISOString()
         })
       });
-      fetchLeaderboard();
+      if (res.ok) {
+        fetchLeaderboard();
+      }
     } catch (e) {
       console.error("Failed to save score", e);
     }
@@ -720,7 +724,7 @@ export default function App() {
         )}
       </AnimatePresence>
 
-      <style>{`
+      <style jsx global>{`
         .perspective-1000 {
           perspective: 1000px;
         }
